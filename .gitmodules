@@ -1,3 +1,6 @@
 [submodule "c_src/termbox"]
 	path = c_src/termbox
 	url = https://github.com/nsf/termbox
+[submodule "vendor/termbox2"]
+	path = vendor/termbox2
+	url = git@github.com:termbox/termbox2.git

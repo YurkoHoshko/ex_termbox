@@ -1,7 +1,7 @@
 defmodule ExTermbox.Integration.BindingsTest do
   use ExUnit.Case, async: false
 
-  alias ExTermbox.Bindings
+  alias ExTermbox.BindingsV2, as: Bindings
 
   setup do
     on_exit(fn ->

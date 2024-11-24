@@ -4,10 +4,10 @@ defmodule ExTermbox.Mixfile do
   def project do
     [
       app: :ex_termbox,
-      version: "1.0.2",
-      elixir: "~> 1.6",
+      version: "2.0.0",
+      elixir: "~> 1.17",
       start_permanent: Mix.env() == :prod,
-      compilers: [:elixir_make | Mix.compilers()],
+      # compilers: [:elixir_make | Mix.compilers()],
       make_targets: ["all"],
       make_clean: ["clean"],
       deps: deps(),
@@ -33,9 +33,9 @@ defmodule ExTermbox.Mixfile do
   defp deps do
     [
       {:elixir_make, "~> 0.6", runtime: false},
-      {:ex_doc, "~> 0.19", only: :dev, runtime: false},
-      {:dialyze, "~> 0.2.0", only: :dev},
-      {:credo, "~> 1.0", only: [:dev, :test], runtime: false}
+      {:ex_doc, "~> 0.35", only: :dev, runtime: false},
+      {:credo, "~> 1.7.10", only: [:dev, :test], runtime: false},
+      {:zigler, "~> 0.13.2", runtime: false}
     ]
   end
 
