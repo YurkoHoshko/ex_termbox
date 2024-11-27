@@ -4,13 +4,13 @@ defmodule EventViewer do
   can be click, resize or key press events.
   """
 
-  alias ExTermbox.BindingsV2, as: Termbox
+  alias ExTermbox.Bindings, as: Termbox
   alias ExTermbox.{Cell, Constants, EventManager, Event, Position}
 
   def run do
     :ok = Termbox.init()
     {:ok, _} = Termbox.select_input_mode(Constants.input_mode(:esc_with_mouse))
-    {:ok, _pid} = EventManager.start_link(bindings: ExTermbox.BindingsV2)
+    {:ok, _pid} = EventManager.start_link()
     :ok = EventManager.subscribe(self())
 
     render_header()

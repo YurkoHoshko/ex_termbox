@@ -101,10 +101,6 @@ defmodule ExTermbox.EventManager do
   end
 
   @impl true
-  def handle_info({:event, packed_event}, state) when is_tuple(packed_event) do
-    handle_info({:event, unpack_event(packed_event)}, state)
-  end
-
   def handle_info({:event, %Event{} = event}, state) do
     # Notify subscribers of the event
     :ok = notify(state.recipients, event)
@@ -112,7 +108,13 @@ defmodule ExTermbox.EventManager do
     {:noreply, state}
   end
 
-  def handle_info(_message, state) do
+  def handle_info({:event, packed_event}, state) when is_map(packed_event) do
+    event = struct!(Event, Map.to_list(packed_event))
+    handle_info({:event, event}, state)
+  end
+
+  def handle_info(message, state) do
+    IO.inspect(message)
     {:noreply, state}
   end
 
@@ -145,9 +147,5 @@ defmodule ExTermbox.EventManager do
     end
 
     :ok
-  end
-
-  defp unpack_event({type, mod, key, ch, w, h, x, y}) do
-    %Event{type: type, mod: mod, key: key, ch: ch, w: w, h: h, x: x, y: y}
   end
 end
