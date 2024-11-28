@@ -1,3 +1,4 @@
-[submodule "vendor/termbox2"]
-	path = vendor/termbox2
+
+[submodule "c_src/termbox2"]
+	path = c_src/termbox2
 	url = git@github.com:termbox/termbox2.git

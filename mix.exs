@@ -7,7 +7,7 @@ defmodule ExTermbox.Mixfile do
       version: "2.0.0",
       elixir: "~> 1.17",
       start_permanent: Mix.env() == :prod,
-      # compilers: [:elixir_make | Mix.compilers()],
+      compilers: [:elixir_make | Mix.compilers()],
       make_targets: ["all"],
       make_clean: ["clean"],
       deps: deps(),
@@ -46,10 +46,8 @@ defmodule ExTermbox.Mixfile do
   defp package do
     [
       files: ~w(
-        c_src/termbox_bindings.c
-        c_src/termbox/src/*.{inl,c,h}
-        c_src/termbox/**/wscript
-        c_src/termbox/waf
+        c_src/termbox2/*.{a,o,h,dylib,sh}
+        c_src/termbox2/Makefile
         lib
         priv/.keep
         Makefile

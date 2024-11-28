@@ -10,8 +10,8 @@ defmodule ExTermbox.Bindings do
   use Zig,
     otp_app: :zigler,
     c: [
-      link_lib: "../../vendor/termbox2/libtermbox2.a",
-      include_dirs: "../../vendor/termbox2"
+      link_lib: "../../c_src/termbox2/libtermbox2.a",
+      include_dirs: "../../c_src/termbox2"
     ],
     resources: [
       :PollStateResource
