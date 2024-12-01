@@ -154,13 +154,15 @@ defmodule ExTermbox.Bindings do
     }
 
     // Select input mode
-    pub fn select_input_mode(_: i32) beam.term {
-       return ok_tuple(.not_implemented);
+    pub fn select_input_mode(mode: i32) beam.term {
+        const result = c.tb_set_input_mode(mode);
+        return ok_tuple(result);
     }
 
     // Select output mode
-    pub fn select_output_mode(_: i32) beam.term {
-        return ok_tuple(.not_implemented);
+    pub fn select_output_mode(mode: i32) beam.term {
+        const result = c.tb_set_output_mode(mode);
+        return ok_tuple(result);
     }
 
     // Shutdown termbox
