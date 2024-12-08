@@ -3,8 +3,8 @@ defmodule ExTermbox.Mixfile do
 
   def project do
     [
-      app: :ex_termbox,
-      version: "2.0.0",
+      app: :ex_termbox2,
+      version: "0.1.0",
       elixir: "~> 1.17",
       start_permanent: Mix.env() == :prod,
       compilers: [:elixir_make | Mix.compilers()],
@@ -16,8 +16,8 @@ defmodule ExTermbox.Mixfile do
       aliases: aliases(),
 
       # Docs
-      name: "ExTermbox",
-      source_url: "https://github.com/ndreynolds/ex_termbox",
+      name: "ExTermbox2",
+      source_url: "https://github.com/YurkoHoshko/ex_termbox2",
       docs: [
         extras: ["README.md"]
       ]
@@ -40,7 +40,7 @@ defmodule ExTermbox.Mixfile do
   end
 
   defp description do
-    "Termbox bindings for Elixir"
+    "Termbox2 bindings for Elixir"
   end
 
   defp package do
@@ -55,9 +55,9 @@ defmodule ExTermbox.Mixfile do
         README.md
         LICENSE
       ),
-      maintainers: ["Nick Reynolds"],
+      maintainers: ["Yurko Hoshko"],
       licenses: ["MIT"],
-      links: %{"GitHub" => "https://github.com/ndreynolds/ex_termbox"}
+      links: %{"GitHub" => "https://github.com/YurkoHoshko/ex_termbox2"}
     ]
   end
 
