@@ -1,6 +1,6 @@
 # TODOs
 
-- [ ] CI Setup
+- [x] CI Setup
   - [ ] Build and verify package for Mac
   - [ ] Build and verify package for Linux
   - [ ] Publish package to hex.pm
