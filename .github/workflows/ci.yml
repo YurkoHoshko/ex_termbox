@@ -9,8 +9,8 @@ on:
       - main
 
 jobs:
-  build-and-verify-mac:
-    runs-on: macos-latest
+  build-and-verify-linux:
+    runs-on: ubuntu-latest
 
     steps:
     - name: Checkout code
@@ -19,8 +19,8 @@ jobs:
     - name: Set up Elixir
       uses: erlef/setup-elixir@v1
       with:
-        elixir-version: '1.13'
-        otp-version: '24'
+        elixir-version: '1.17'
+        otp-version: '27'
 
     - name: Install dependencies
       run: mix deps.get
