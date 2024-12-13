@@ -14,6 +14,7 @@
   - [ ] Update bindings documentation
   - [ ] Update `EventManager` to better leverage new bindings
   - [ ] Port potentially interesting PRs from original implementation - e.g. applying the diff rather the full re-render.
+  - [ ] Add test coverage tools
 - [ ] DevEx
   - [x] Populate TODO.md
   - [x] Setup zellij workspace

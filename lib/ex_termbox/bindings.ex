@@ -5,16 +5,14 @@ defmodule ExTermbox.Bindings do
   and rendering.
   """
 
-  alias ExTermbox.{Cell, Constants, Position}
+  alias ExTermbox.Cell
+  alias ExTermbox.Position
 
   use Zig,
     otp_app: :zigler,
     c: [
       link_lib: "../../c_src/termbox2/libtermbox2.a",
       include_dirs: "../../c_src/termbox2"
-    ],
-    resources: [
-      :PollStateResource
     ],
     nifs: [
       :init,
@@ -33,198 +31,162 @@ defmodule ExTermbox.Bindings do
     callbacks: [on_load: :load_fn]
 
   ~Z"""
-    const beam = @import("beam");
-    const c = @cImport(@cInclude("termbox2.h"));
-    const e = @import("erl_nif");
-    const root = @import("root");
-    const std = @import("std");
+  const beam = @import("beam");
+  const c = @cImport(@cInclude("termbox2.h"));
+  const e = @import("erl_nif");
+  const root = @import("root");
+  const std = @import("std");
 
-    // Global state
-    var running: bool = false;
-    var polling_enabled: bool = false;
-    var continue_polling: bool = false;
-    var mutex: ?*e.ErlNifMutex = null;
+  // Global state
+  var running: bool = false;
+  var polling_enabled: bool = false;
+  var mutex: ?*e.ErlNifMutex = null;
 
-    // On Load
+  // On Load
 
-    pub fn load_fn(_: ?*?*u32, _: u32) !void {
+  pub fn load_fn(_: ?*?*u32, _: u32) !void {
       mutex = e.enif_mutex_create(@constCast("extb-poll-mutex"));
-    }
+  }
 
-    // Resource
+  // Helper functions
+  fn ok() beam.term {
+      return beam.make(.ok, .{});
+  }
 
-    const PollState = struct {
-        thread_id: e.ErlNifTid,
-        thread_joined: bool,
-        recipient_pid: beam.pid,
-    };
+  fn ok_tuple(value: anytype) beam.term {
+      return beam.make(.{ .ok, value }, .{});
+  }
 
-    pub const PollStateResource = beam.Resource(PollState, root, .{});
+  fn error_tuple(reason: @TypeOf(.enum_literal)) beam.term {
+      return beam.make(.{ .@"error", reason }, .{});
+  }
 
-    // Helper functions
-    fn ok() beam.term {
-        return beam.make(.ok, .{});
-    }
+  // Initialize termbox
+  pub fn init() beam.term {
+      _ = e.enif_mutex_lock(mutex);
+      defer _ = e.enif_mutex_unlock(mutex);
+      if (running) {
+          return error_tuple(.already_running);
+      }
 
-    fn ok_tuple(value: anytype) beam.term {
-        return beam.make(.{.ok, value}, .{});
-    }
+      const code = c.tb_init();
+      if (code == 0) {
+          running = true;
+          return ok();
+      }
+      return error_tuple(.could_not_start);
+  }
 
-    fn error_tuple(reason: @TypeOf(.enum_literal)) beam.term {
-        return beam.make(.{.@"error", reason}, .{});
-    }
+  // Get terminal width
+  pub fn width() beam.term {
+      if (!running) {
+          return error_tuple(.not_running);
+      }
+      const w = c.tb_width();
+      return ok_tuple(w);
+  }
 
-    // Initialize termbox
-    pub fn init() beam.term {
-        _ = e.enif_mutex_lock(mutex);
-        defer _ = e.enif_mutex_unlock(mutex);
-        if (running) {
-            return error_tuple(.already_running);
-        }
+  // Get terminal height
+  pub fn height() beam.term {
+      if (!running) {
+          return error_tuple(.not_running);
+      }
+      const h = c.tb_height();
+      return ok_tuple(h);
+  }
 
-        const code = c.tb_init();
-        if (code == 0) {
-            running = true;
-            return ok();
-        }
-        return error_tuple(.could_not_start);
-    }
+  // Clear the terminal
+  pub fn clear() beam.term {
+      if (!running) {
+          return error_tuple(.not_running);
+      }
+      _ = c.tb_clear();
+      return ok();
+  }
 
-    // Get terminal width
-    pub fn width() beam.term {
-        if (!running) {
-            return error_tuple(.not_running);
-        }
-        const w = c.tb_width();
-        return ok_tuple(w);
-    }
+  // Set clear attributes
+  pub fn set_clear_attributes(fg: u32, bg: u32) beam.term {
+      if (!running) {
+          return error_tuple(.not_running);
+      }
+      _ = c.tb_set_clear_attrs(@truncate(fg), @truncate(bg));
+      return ok();
+  }
 
-    // Get terminal height
-    pub fn height() beam.term {
-        if (!running) {
-            return error_tuple(.not_running);
-        }
-        const h = c.tb_height();
-        return ok_tuple(h);
-    }
+  // Present changes to the terminal
+  pub fn present() beam.term {
+      if (!running) {
+          return error_tuple(.not_running);
+      }
+      _ = c.tb_present();
+      return ok();
+  }
 
-    // Clear the terminal
-    pub fn clear() beam.term {
-        if (!running) {
-            return error_tuple(.not_running);
-        }
-        _ = c.tb_clear();
-        return ok();
-    }
+  // Set cursor position
+  pub fn set_cursor(x: i32, y: i32) beam.term {
+      if (!running) {
+          return error_tuple(.not_running);
+      }
+      _ = c.tb_set_cursor(@truncate(x), @truncate(y));
+      return ok();
+  }
 
-    // Set clear attributes
-    pub fn set_clear_attributes(fg: u32, bg: u32) beam.term {
-        if (!running) {
-            return error_tuple(.not_running);
-        }
-        _ = c.tb_set_clear_attrs(@truncate(fg), @truncate(bg));
-        return ok();
-    }
+  // Change cell attributes
+  pub fn change_cell(x: i32, y: i32, ch: u32, fg: u32, bg: u32) beam.term {
+      if (!running) {
+          return error_tuple(.not_running);
+      }
+      _ = c.tb_set_cell(x, y, ch, @truncate(fg), @truncate(bg));
+      return ok();
+  }
 
-    // Present changes to the terminal
-    pub fn present() beam.term {
-        if (!running) {
-            return error_tuple(.not_running);
-        }
-        _ = c.tb_present();
-        return ok();
-    }
+  // Select input mode
+  pub fn select_input_mode(mode: i32) beam.term {
+      const result = c.tb_set_input_mode(mode);
+      return ok_tuple(result);
+  }
 
-    // Set cursor position
-    pub fn set_cursor(x: i32, y: i32) beam.term {
-        if (!running) {
-            return error_tuple(.not_running);
-        }
-        _ = c.tb_set_cursor(@truncate( x), @truncate( y));
-        return ok();
-    }
+  // Select output mode
+  pub fn select_output_mode(mode: i32) beam.term {
+      const result = c.tb_set_output_mode(mode);
+      return ok_tuple(result);
+  }
 
-    // Change cell attributes
-    pub fn change_cell(x: i32, y: i32, ch: u32, fg: u32, bg: u32) beam.term {
-        if (!running) {
-            return error_tuple(.not_running);
-        }
-        _ = c.tb_set_cell(x, y, ch, @truncate(fg), @truncate(bg));
-        return ok();
-    }
+  // Shutdown termbox
+  pub fn shutdown() beam.term {
+      _ = e.enif_mutex_lock(mutex);
+      defer _ = e.enif_mutex_unlock(mutex);
+      if (!running) {
+          return error_tuple(.not_running);
+      }
+      _ = c.tb_shutdown();
+      running = false;
+      return ok();
+  }
 
-    // Select input mode
-    pub fn select_input_mode(mode: i32) beam.term {
-        const result = c.tb_set_input_mode(mode);
-        return ok_tuple(result);
-    }
+  // Poll
+  pub fn poll_async(recipient_pid: beam.pid) !void {
+      defer {
+          beam.send(recipient_pid, .killed, .{}) catch {};
+      }
 
-    // Select output mode
-    pub fn select_output_mode(mode: i32) beam.term {
-        const result = c.tb_set_output_mode(mode);
-        return ok_tuple(result);
-    }
+      var poll_result: c_int = 0;
+      while (running) {
+          var event: c.tb_event = undefined;
 
-    // Shutdown termbox
-    pub fn shutdown() beam.term {
-        _ = e.enif_mutex_lock(mutex);
-        defer _ = e.enif_mutex_unlock(mutex);
-        if (!running) {
-            return error_tuple(.not_running);
-        }
-        _ = c.tb_shutdown();
-        running = false;
-        return ok();
-    }
-   
-    // Stop polling
-    pub fn stop_polling() beam.term {
-        _ = e.enif_mutex_lock(mutex);
-        defer _ = e.enif_mutex_unlock(mutex);
-        if (!running) {
-            return error_tuple(.not_running);
-        }
+          poll_result = c.tb_peek_event(&event, 0);
+          if (poll_result == 0) {
+              const payload = beam.make(.{ .event, event }, .{});
+              _ = try beam.send(recipient_pid, payload, .{});
+          }
 
-        if (!polling_enabled) {
-            return error_tuple(.not_polling);
-        }
-
-        continue_polling = false;
-        polling_enabled = false;
-        return ok();
-    }
-
-    // Poll
-    pub fn poll_async(recipient_pid: beam.pid)  !void  {
-        defer {
-            beam.send(recipient_pid, .killed, .{}) catch {};
-        }
-
-        var poll_result: c_int = 0;
-        while (true) {
-            var event: c.tb_event = undefined;
-            
-            poll_result = c.tb_peek_event(&event, 0);
-            if (poll_result == 0) {
-                const payload = beam.make(.{.event, event}, .{});
-                _ = try beam.send(recipient_pid, payload, .{});
-            }
-
-            try beam.yield();
-        }
-    }
+          try beam.yield();
+      }
+  }
   """
 
   @spec put_cell(Cell.t()) :: :ok | {:error, :not_running}
   def put_cell(%Cell{position: %Position{x: x, y: y}, ch: ch, fg: fg, bg: bg}) do
     change_cell(x, y, ch, fg, bg)
   end
-
-  def start_polling(recipient) do
-    this = self()
-    threaded = spawn(fn -> poll_async(this) end)
-    {:ok, "whatev"}
-  end
-
-  def stop_polling(), do: :ok
 end

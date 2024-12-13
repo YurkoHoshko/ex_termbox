@@ -3,21 +3,20 @@ defmodule ExTermbox.EventManager do
   This module implements an event manager that notifies subscribers of
   keyboard, mouse and resize events received from the termbox API.
 
-  Internally, the event manager is managing a NIF-based polling routine and
-  fanning out polled events to subscribers. It works likes this:
+  Internally, the event manager is managing a Zigler NIF-based polling routine that spawns and keep track of threaded nif as well as fans out polled events to subscribers. It works likes this:
 
     1. The `ExTermbox.Bindings.start_polling/1` NIF is called with the event
        manager's pid.
     2. The NIF creates a background thread for the blocking polling routine and
-       immediately returns with a resource representing a handle for the thread.
+       immediately returns with a resource representing a pid for the thread.
     3. When the polling routine receives an event (e.g., a keypress), it sends
        a message to the event manager with the event data, and then continues
        polling for the next event.
     4. The event manager receives event data from the background thread and
        notifies all of its subscribers of the event. Steps 3 and 4 are repeated
        for each event.
-    5. When the event manager is terminated, `ExTermbox.Bindings.stop_polling/0`
-       is called to stop polling and terminate the background thread.
+    5. When the event manager is terminated, `Process.exit(state.io_poller_pid, :kill)`
+       ensures that polling thread is cleaned up.
 
   Example Usage:
 
@@ -39,6 +38,8 @@ defmodule ExTermbox.EventManager do
   use GenServer
 
   alias ExTermbox.Event
+
+  require Logger
 
   @default_bindings ExTermbox.Bindings
 
@@ -82,22 +83,31 @@ defmodule ExTermbox.EventManager do
      %{
        bindings: bindings,
        status: :ready,
-       recipients: MapSet.new()
+       recipients: MapSet.new(),
+       io_poller_pid: nil
      }}
   end
 
   @impl true
   def handle_call({:subscribe, pid}, _from, state) do
-    if state.status == :ready do
-      :ok = start_polling(state.bindings)
-    end
+    case state.status do
+      :polling ->
+        {:reply, :ok, %{state | recipients: MapSet.put(state.recipients, pid)}}
 
-    {:reply, :ok,
-     %{
-       state
-       | status: :polling,
-         recipients: MapSet.put(state.recipients, pid)
-     }}
+      :ready ->
+        {:ok, io_poller_pid} = start_polling(state)
+
+        {:reply, :ok,
+         %{
+           state
+           | io_poller_pid: io_poller_pid,
+             status: :polling,
+             recipients: MapSet.put(state.recipients, pid)
+         }}
+         _ ->
+           
+      {:reply, {:error, :not_ready}, state}
+    end
   end
 
   @impl true
@@ -114,7 +124,10 @@ defmodule ExTermbox.EventManager do
   end
 
   def handle_info(message, state) do
-    IO.inspect(message)
+    Logger.error(
+      "#{__MODULE__} received an unexpected message: #{inspect(message)}"
+    )
+
     {:noreply, state}
   end
 
@@ -122,22 +135,22 @@ defmodule ExTermbox.EventManager do
   def terminate(_reason, state) do
     # Try to stop polling for events to leave the system in a clean state. If
     # this fails or `terminate/2` isn't called, it will have to be done later.
-    _ = state.bindings.stop_polling()
+    if state.io_poller_pid, do: Process.exit(state.io_poller_pid, :kill)
     :ok
   end
 
-  defp start_polling(bindings) do
-    case bindings.start_polling(self()) do
-      {:ok, _resource} ->
-        :ok
+  defp start_polling(state) do
+    this = self()
 
-      {:error, :already_polling} ->
-        with :ok <- bindings.stop_polling(),
-             {:ok, _resource} <- bindings.start_polling(self()),
-             do: :ok
+    if state.io_poller_pid do
+      {:error, :already_polling}
+    else
+      io_poller_pid = spawn(fn -> state.bindings.poll_async(this) end)
 
-      {:error, unhandled_error} ->
-        {:error, unhandled_error}
+      case io_poller_pid do
+        _ when is_pid(io_poller_pid) -> {:ok, io_poller_pid}
+        {:error, unhandled_error} -> {:error, unhandled_error}
+      end
     end
   end
 
