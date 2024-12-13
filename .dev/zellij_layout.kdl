@@ -1,0 +1,26 @@
+layout {
+    default_tab_template {
+        children
+        pane size=1 borderless=true {
+            plugin location="compact-bar"
+        }
+    }
+
+    tab name="ExTermbox Code" {
+        pane split_direction="vertical"  {
+            pane command="hx" focus=true name="Code" size="70%" {
+                args "TODO.md"
+            }
+
+            pane stacked=true {
+                pane command="aider"
+                pane command="mix" {
+                    args "test"
+                }
+                pane command="git" expanded=true {
+                    args "log"
+                }
+            }
+        }
+    }
+}

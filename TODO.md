@@ -13,3 +13,11 @@
   - [ ] Review the bindings, drop unnecessary code
   - [ ] Update bindings documentation
   - [ ] Update `EventManager` to better leverage new bindings
+  - [ ] Port potentially interesting PRs from original implementation - e.g. applying the diff rather the full re-render.
+- [ ] DevEx
+  - [x] Populate TODO.md
+  - [x] Setup zellij workspace
+    - [x] Code - open on TODO.md
+    - [x] Tests
+    - [x] Git History
+    - [x] Aider
