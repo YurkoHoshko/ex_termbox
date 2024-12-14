@@ -9,7 +9,7 @@ defmodule ExTermbox.Bindings do
   alias ExTermbox.Position
 
   use Zig,
-    otp_app: :zigler,
+    otp_app: :ex_termbox,
     c: [
       link_lib: "../../c_src/termbox2/libtermbox2.a",
       include_dirs: "../../c_src/termbox2"

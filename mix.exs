@@ -3,7 +3,7 @@ defmodule ExTermbox.Mixfile do
 
   def project do
     [
-      app: :ex_termbox2,
+      app: :ex_termbox,
       version: "0.1.0",
       elixir: "~> 1.17",
       start_permanent: Mix.env() == :prod,
@@ -35,7 +35,7 @@ defmodule ExTermbox.Mixfile do
       {:elixir_make, "~> 0.6", runtime: false},
       {:ex_doc, "~> 0.35", only: :dev, runtime: false},
       {:credo, "~> 1.7.10", only: [:dev, :test], runtime: false},
-      {:zigler, "~> 0.13.2", runtime: false}
+      {:zigler, "~> 0.13.3", runtime: false}
     ]
   end
 
