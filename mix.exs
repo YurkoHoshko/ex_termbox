@@ -48,8 +48,8 @@ defmodule ExTermbox.Mixfile do
       files: ~w(
         c_src/termbox2/*.{a,o,h,dylib,sh}
         c_src/termbox2/Makefile
-        lib
         priv/.keep
+        lib
         Makefile
         mix.exs
         README.md
